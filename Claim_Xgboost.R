@@ -64,6 +64,11 @@ rmse(pred,test$COB_SAVINGS_AMT)
 #Check the match and unmatch
 test$Pred <- round(pred)
 test$result <- ifelse(test$COB_SAVINGS_AMT==test$Pred, "match","Unmatch")
-barplot(table(test$result),col = c("darkgreen", "darkred"))
+
+#show in graph match and unmatch
+barplot(table(test_new$result),col = c("forestgreen", "deepskyblue"))
+
+#show the unmatch rows
+test_new[test_new$result == "Unmatch",1:8]
 
 View(test)
