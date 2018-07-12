@@ -7,6 +7,7 @@ setwd("C:\\Users\\user\\Desktop")
 
 s1 <- read.xlsx("measures.xlsx",1,header = T)
 
+
 Final_Component <- c(100010012,100010013,100010015,100010017)
 
 s1 <- s1[s1$Component_ID %in% Final_Component, ]
@@ -22,18 +23,44 @@ y1 <- as.data.frame(y1)
 
 #len <- length(Final_Component)
 
+y2 <- data.frame()
+j = 1
+x = 0
+k = 1
+
 for(i in 1:length(Final_Component))
 {
-  for(j in 1:nrow(y1))
+  for (j in 1: nrow(y1))
   {
-  if(Final_Component[i] != y1[j,1])
-     {
-       y2 = data.frame(Final_Component[i],"0")
-       names(y2)[1] <- paste("Component_ID")
-       names(y2)[2] <- paste("count")
-  }
-    j =j+1
-  }
+    
+    y  = Final_Component[i]
+     
+       if (y == y1[j,1])
+       {
+       
+        x[k] = Final_Component[i]
+        k = k+1  
+       }
+    
+    
+      }
+
+  
+}
+
+
+m <-  setdiff(Final_Component,x) 
+
+
+if (length(m) > 0)
+{
+for( k in 1:length(m))
+{
+y2[k,1] = m[k]
+y2[k,2] = "0"
+names(y2)[1] <- paste("Component_ID")
+names(y2)[2] <- paste("count")
+}
 }
 
 final <- rbind(y1,y2)
@@ -51,6 +78,7 @@ else
     final$Target[k] <- "N"
 }
 
+
 #######################
 
 s2 <- read.xlsx("Measure_COF.xlsx",1,header = T)
@@ -67,20 +95,46 @@ y3 <- DT1[, .(count = length(unique(Mesures_Id))), by = Component_ID]
 
 
 y3 <- as.data.frame(y3)
+y4 <- data.frame()
+j = 1
+z = 0
+k = 1
 
 for(i in 1:length(Final_Component))
 {
-  for(j in 1:nrow(y3))
+  for (j in 1: nrow(y1))
   {
-    if(Final_Component[i] != y3[j,1])
+    
+    y  = Final_Component[i]
+    
+    if (y == y3[j,1])
     {
-      y4 = data.frame(Final_Component[i],"0")
-      names(y4)[1] <- paste("Component_ID")
-      names(y4)[2] <- paste("count")
+      
+      z[k] = Final_Component[i]
+      k = k+1  
     }
-    j =j+1
+    
+    
+  }
+  
+  
+}
+
+
+n <-  setdiff(Final_Component,z) 
+
+
+if (length(n) > 0)
+{
+  for( k in 1:length(n))
+  {
+    y4[k,1] = n[k]
+    y4[k,2] = "0"
+    names(y4)[1] <- paste("Component_ID")
+    names(y4)[2] <- paste("count")
   }
 }
+
 
 final1 <- rbind(y3,y4)
 
@@ -97,6 +151,7 @@ for(k in 1:nrow(final1))
     final1$Target[k] <- "N"
 }
 
+View(final1)
 #########K Means Clustering#########
 
 
@@ -144,3 +199,5 @@ for (x in 1: nrow(New_final))
     New_final$COF <- "Y"
   }
 }
+
+
