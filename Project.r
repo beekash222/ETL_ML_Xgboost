@@ -58,8 +58,8 @@ for( k in 1:length(m))
 {
 y2[k,1] = m[k]
 y2[k,2] = "0"
-names(y2)[1] <- paste("Component_ID")
-names(y2)[2] <- paste("count")
+names(y2)[1] <- paste("Measures_component_Id")
+names(y2)[2] <- paste("COUNT_COF")
 }
 }
 
@@ -78,7 +78,7 @@ else
     final$Target[k] <- "N"
 }
 
-
+final <- final[order(final$Measures_Component_Id),]
 #######################
 
 s2 <- read.xlsx("Measure_COF.xlsx",1,header = T)
@@ -152,6 +152,8 @@ for(k in 1:nrow(final1))
 }
 
 View(final1)
+
+final1 <- final1[order(final1$Measures_Component_Id),]
 #########K Means Clustering#########
 
 
