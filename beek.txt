@@ -1,10 +1,15 @@
+Create a distinct record in the target table 
+CFm_provider for each “provider_id “ from the source table  “demorpahic” grouping by bus_ef_dt and bus_exp_dt 
+and move distinct columns to the target referring to the column elvell rule
 
+Step 2 : from step 1 result join provider_id with “provider_org_aff_record.provider_id and Pick a record and check whether the provider_org_aff_record.eff_dt between demorpahic.bus_eff_dt and demographic.bus_exp_dt
+And move all the related columns refring to the column level rule
 
+Step 3 : Frm step 1 result , join privder_id with provider_licence_record.ws50_privoder_id
+And move all related columsn referring to the column level rule
 
+Steo 4 : Frm step 1 result , join privder_id with provider_email_record.ws60_privoder_id
+And move all related columsn referring to the column level rule
 
-
-
-
-
-
-
+Step 5 : : Frm step 1 result , join privder_id with provider_language_record.ws_70_privoder_id
+And move all related columsn referring to the column level rule
