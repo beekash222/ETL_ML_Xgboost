@@ -1,0 +1,285 @@
+####################
+rm(list=ls())
+gc()
+
+###############
+library(tidyverse)
+library(rtweet)
+library(tidytext)
+library(stringr)
+library(tm)
+library(dplyr)
+require(RColorBrewer) 
+library('wordcloud')
+require(plyr)
+require(stringi)
+#######################
+
+packageVersion("rtweet")
+
+sessionInfo()
+
+twitter_token <- create_token(
+  
+  app = "Beekash Mohanty",
+  
+  consumer_key = "YZ5ph9NORTEHUZZrNXxQ3ofiW",
+  
+  consumer_secret = "xQEjXF0SpxlX8HHk8ZCDcvZVReKIHX7pKgVh1UqcIHXdmiRF2z",
+  access_token="1198129748708225024-CUIxSAHkO1ELN3CMSCLsJ0VA2BSHCE",
+  access_secret="fbPHR1UkBpzzvzs74m5I8w43zk2sRoLKdlbSSCOAB00S5")
+
+tweets = search_tweets("#infosys", n=1000, lang='en')
+
+content_url <- tweets$status_url
+
+tweets_text = tweets$text
+clean.text = function(x)
+{
+  x <- gsub("<(.*)>","",x)
+  x <- gsub("#*",'',x)
+  x <- gsub("http.*",'',x)
+  x <- gsub("https.*",'',x)
+  x = gsub("http\\w+", "", x)
+  x = gsub("[ \t]{2,}", "", x)
+  x = gsub("^\\s+|\\s+$", "", x) 
+  x = gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", x)
+  x = gsub("http\\w+", "", x)
+  x = gsub("[ \t]{2,}", "", x)
+  x = gsub("^\\s+|\\s+$", "", x) 
+  x <- gsub("[][!#$%()'*.,:;<=>@^|~`{}]",'',x)
+  x <- gsub("[[:punct:]]",'',x)
+  x <- gsub('[0-9]+','',x)
+  x <- gsub('@','',x)
+  x <- gsub(',','',x)
+  x <- gsub('\n\n','',x)
+  x <- tolower(x)
+}
+
+
+geartweets = clean.text(tweets_text)
+
+
+pos.words = scan('C:\\Users\\user\\Desktop\\cyber hackathon\\positive-words.txt', what='character', comment.char=';')
+neg.words = scan('C:\\Users\\user\\Desktop\\cyber hackathon\\negative-words.txt', what='character', comment.char=';')
+
+
+neg.words = c(neg.words, 'wtf', 'fail')
+
+
+
+score.sentiment = function(sentences, pos.words, neg.words, .progress='none')
+{
+  
+  # we got a vector of sentences. plyr will handle a list
+  # or a vector as an "l" for us
+  # we want a simple array of scores back, so we use
+  # "l" + "a" + "ply" = "laply":
+  scores = laply(sentences, function(sentence, pos.words, neg.words) {
+    
+    # clean up sentences with R's regex-driven global substitute, gsub():
+    sentence = gsub('[[:punct:]]', '', sentence)
+    sentence = gsub('[[:cntrl:]]', '', sentence)
+    sentence = gsub('\\d+', '', sentence)
+    # and convert to lower case:
+    sentence = tolower(sentence)
+    
+    # split into words. str_split is in the stringr package
+    word.list = str_split(sentence, '\\s+')
+    # sometimes a list() is one level of hierarchy too much
+    words = unlist(word.list)
+    
+    # compare our words to the dictionaries of positive & negative terms
+    pos.matches = match(words, pos.words)
+    neg.matches = match(words, neg.words)
+    
+    # match() returns the position of the matched term or NA
+    # we just want a TRUE/FALSE:
+    pos.matches = !is.na(pos.matches)
+    neg.matches = !is.na(neg.matches)
+    
+    # and conveniently enough, TRUE/FALSE will be treated as 1/0 by sum():
+    score = sum(pos.matches) - sum(neg.matches)
+    
+    return(score)
+  }, pos.words, neg.words, .progress=.progress )
+  
+  scores.df = data.frame(score=scores, text=sentences)
+  return(scores.df)
+}
+
+
+sentiment.scores= score.sentiment(geartweets, pos.words, neg.words, .progress='none')
+
+score <- sentiment.scores$score
+
+#library(plotly)
+#p <- plot_ly(x = ~score, type = "histogram")
+
+#p
+
+Final_Dataset <- data.frame(score=score, Post=geartweets, Content_URL = content_url)
+
+Final_Dataset <- Final_Dataset[score < 0,]
+
+
+#negativeTweets = subset(sentiment.scores, score < 0)$text
+
+
+positive.words = scan('C:\\Users\\user\\Desktop\\cyber hackathon\\positive-words.txt', what='character', comment.char=';')
+negative.words = scan('C:\\Users\\user\\Desktop\\cyber hackathon\\negative-words.txt', what='character', comment.char=';')
+score.topic = function(sentences, pos.words, neg.words, .progress='none')
+{
+  require(plyr)
+  require(stringr)
+  require(stringi)
+  
+  # we got a vector of sentences. plyr will handle a list
+  # or a vector as an "l" for us
+  # we want a simple array of scores back, so we use
+  # "l" + "a" + "ply" = "laply":
+  scores = laply(sentences, function(sentence, pos.words, neg.words) {
+    
+    # clean up sentences with R's regex-driven global substitute, gsub():
+    sentence = gsub('[[:punct:]]', '', sentence)
+    sentence = gsub('[[:cntrl:]]', '', sentence)
+    sentence = gsub('\\d+', '', sentence)
+    # and convert to lower case:
+    sentence = tolower(sentence)
+    
+    # split into words. str_split is in the stringr package
+    word.list = str_split(sentence, '\\s+')
+    # sometimes a list() is one level of hierarchy too much
+    words = unlist(word.list)
+    
+    # compare our words to the dictionaries of positive & negative terms
+    pos.matches = match(words, pos.words)
+    neg.matches = match(words, neg.words)
+    # match() returns the position of the matched term or NA
+    # we just want a TRUE/FALSE:
+    pos.matches = !is.na(pos.matches)
+    neg.matches = !is.na(neg.matches)
+    
+    # and conveniently enough, TRUE/FALSE will be treated as 1/0 by sum():
+    score = sum(pos.matches) - sum(neg.matches)
+    
+    return(score)
+  }, pos.words, neg.words, .progress=.progress )
+  
+  topicscores.df = data.frame(score=scores, text=sentences)
+  return(topicscores.df)
+}
+
+topic.scores= score.topic(geartweets, pos.words, neg.words, .progress='none')
+topic.pos = subset(topic.scores, score >0)
+topic.neg = subset(topic.scores, score <0)
+topic.neu = subset(topic.scores, score =0)
+
+postive= nrow(topic.pos)
+negitive = nrow(topic.pos)
+neutral = nrow(topic.neu)
+
+dftemp=data.frame(topic=c("Postive", "Negitive", "Netural"), 
+                  number=c(postive,negitive,neutral))
+
+library(plotly)
+p <- plot_ly(data=dftemp, labels = ~topic, values = ~number, type = 'pie') %>%
+  layout(title = 'Pie Chart of Tweets Mentioning Decisions',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+p
+
+print(Final_Dataset)
+
+####topic modelling
+
+library(wordcloud)
+library(slam)
+library(topicmodels)
+
+negativeTweets = subset(sentiment.scores, score < 0)$text
+
+corpus <- tolower(negativeTweets)
+corpus <- Corpus(VectorSource(corpus))
+
+#exceptions   <- c("if","in","then","=","right","justify","fill")
+#my_stopwords <- setdiff(stopwords("en"), exceptions)
+#documents = tm_map(documents, removeWords, my_stopwords)
+
+corpus = tm_map(corpus, removeWords,stopwords("en"))
+
+
+# corpus = Corpus(VectorSource(cmail))
+# create term-document matrix
+tdm = DocumentTermMatrix(corpus) # Creating a Term document Matrix
+# create tf-idf matrix
+term_tfidf <- tapply(tdm$v/row_sums(tdm)[tdm$i], tdm$j, mean) * log2(nDocs(tdm)/col_sums(tdm > 0))
+summary(term_tfidf)
+tdm <- tdm[,term_tfidf >= 0.29705]
+tdm <- tdm[row_sums(tdm) > 0,]
+summary(col_sums(tdm))
+#Deciding best K value using Log-likelihood method
+best.model <- lapply(seq(2, 50, by = 1), function(d){LDA(tdm, d)})
+best.model.logLik <- as.data.frame(as.matrix(lapply(best.model, logLik)))
+#calculating LDA
+k = 3;#number of topics
+SEED = 786; # number of tweets used
+CSC_TM <-list(VEM = LDA(tdm, k = k, control = list(seed = SEED)),VEM_fixed = LDA(tdm, k = k,control = list(estimate.alpha = FALSE, seed = SEED)),Gibbs = LDA(tdm, k = k, method = "Gibbs",control = list(seed = SEED, burnin = 1000,thin = 100, iter = 1000)),CTM = CTM(tdm, k = k,control = list(seed = SEED,var = list(tol = 10^-4), em = list(tol = 10^-3))))
+#To compare the fitted models we first investigate the values of the models fitted with VEM and estimated and with VEM and fixed 
+sapply(CSC_TM[1:2], slot, "alpha")
+sapply(CSC_TM, function(x) mean(apply(posterior(x)$topics, 1, function(z) - sum(z * log(z)))))
+Topic <- topics(CSC_TM[["VEM"]], 1)
+Terms <- terms(CSC_TM[["VEM"]], 30)
+Topic_1 <- Terms[,1]
+Topic_2 <- Terms[,2]
+Topic_3 <- Terms[,3]
+#Final_Dataset
+
+topic = function(sentences, pos.words, neg.words, .progress='none')
+{
+  require(plyr)
+  require(stringr)
+  require(stringi)
+  
+  # we got a vector of sentences. plyr will handle a list
+  # or a vector as an "l" for us
+  # we want a simple array of scores back, so we use
+  # "l" + "a" + "ply" = "laply":
+  topic_score = laply(sentences, function(sentence, pos.words, neg.words) {
+    
+    # clean up sentences with R's regex-driven global substitute, gsub():
+    sentence = gsub('[[:punct:]]', '', sentence)
+    sentence = gsub('[[:cntrl:]]', '', sentence)
+    sentence = gsub('\\d+', '', sentence)
+    # and convert to lower case:
+    sentence = tolower(sentence)
+    
+    # split into words. str_split is in the stringr package
+    word.list = str_split(sentence, '\\s+')
+    # sometimes a list() is one level of hierarchy too much
+    words = unlist(word.list)
+    
+    # compare our words to the dictionaries of positive & negative terms
+    pos.matches = match(words, pos.words)
+    neg.matches = match(words, neg.words)
+    # match() returns the position of the matched term or NA
+    # we just want a TRUE/FALSE:
+    pos.matches = !is.na(pos.matches)
+    neg.matches = !is.na(neg.matches)
+    
+    # and conveniently enough, TRUE/FALSE will be treated as 1/0 by sum():
+    score = sum(pos.matches) - sum(neg.matches)
+    
+    return(score)
+  }, pos.words, neg.words, .progress=.progress )
+  
+  topic_mod.df = data.frame(score=topic_score, text=sentences)
+  return(topic_mod.df)
+}
+
+x = topic(negativeTweets, Topic_1, Topic_2, .progress='none')
+
+View(x)
+
+
